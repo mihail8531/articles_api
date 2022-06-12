@@ -3,9 +3,17 @@ name = "articles_api"
 version = "0.1.0"
 description = ""
 authors = ["mihail8531 <mihail8531@gmail.com>"]
+license = "MIT"
+readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+fastapi = "^0.78.0"
+python-multipart = "^0.0.5"
+uvicorn = "^0.17.6"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+SQLAlchemy = "^1.4.37"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
