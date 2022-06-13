@@ -14,6 +14,8 @@ uvicorn = "^0.17.6"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 SQLAlchemy = "^1.4.37"
+email-validator = "^1.2.1"
+alembic = "^1.8.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
