@@ -1,2 +1,3 @@
 **/__pycahce__
 *.py[co]
+**/*.db
