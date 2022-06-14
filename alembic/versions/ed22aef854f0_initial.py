@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: dbbdfc2cd3cf
+Revision ID: ed22aef854f0
 Revises: 
-Create Date: 2022-06-13 19:35:29.728382
+Create Date: 2022-06-15 00:51:52.608502
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'dbbdfc2cd3cf'
+revision = 'ed22aef854f0'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,14 +24,16 @@ def upgrade() -> None:
     sa.Column('username', sa.String(), nullable=True),
     sa.Column('hashed_password', sa.String(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('username')
     )
-    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=False)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_table('articles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('content', sa.Text(), nullable=True),
+    sa.Column('state', sa.Enum('draft', 'published', 'approved', 'rejected', name='articlestates'), nullable=True),
     sa.Column('creator_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['creator_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -39,6 +41,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_articles_id'), 'articles', ['id'], unique=False)
     op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('role', sa.Enum('admin', 'moderator', 'writer', 'reader', name='roles'), nullable=True),
     sa.Column('owner_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')

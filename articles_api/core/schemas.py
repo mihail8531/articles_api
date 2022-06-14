@@ -3,7 +3,12 @@ from pydantic import BaseModel, EmailStr
 from .enums import ArticleStates, Roles
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
+class TokenData(BaseModel):
+    id: str
 
 class ArticleBase(BaseModel):
     name: str
@@ -26,7 +31,7 @@ class User(UserBase):
     is_active: bool
     roles: List[Roles]
     created_articles_ids: List[int]
-    edithor_for_articles_ids: List[int]
+    editor_for_articles_ids: List[int]
     author_for_aritcles_ids: List[int]
 
 class UserCreate(UserBase):
