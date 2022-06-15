@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from db.models import User, Role
-from articles_api.core.schemas import UserCreate
-from articles_api.core.enums import Roles
+from .models import Article, User, Role
+from articles_api.core.schemas import ArticleCreate, UserCreate
+from articles_api.core.enums import ArticleStates, Roles
 from articles_api.core.security import get_password_hash
 
 
@@ -26,3 +26,32 @@ def get_user_by_username(db: Session, username: str) -> User:
 
 def get_user_by_id(db: Session, id: int) -> User:
     return db.query(User).filter(User.id == id).first()
+
+def create_article(db: Session,
+                   article: ArticleCreate,
+                   user: User) -> Article:
+    db_article = Article(**article.dict(),
+                         state=ArticleStates.draft,
+                         creator_id=user.id)
+    db.add(db_article)
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def add_role(db: Session,
+             user: User,
+             role: Roles) -> User:
+    db_role = Role(role=role,
+                   owner_id=user.id)
+    db.add(db_role)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def remove_role(db: Session,
+                user: User,
+                role: Roles) -> User:
+    db.query(Role).filter((Role.owner_id == user.id) & (Role.role == role)).delete()
+    db.commit()
+    db.refresh(user)
+    return user

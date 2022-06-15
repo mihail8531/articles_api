@@ -1,1 +1,1 @@
-import db.models
+from .models import *

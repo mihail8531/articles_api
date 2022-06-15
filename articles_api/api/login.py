@@ -33,12 +33,14 @@ async def login_for_access_token(form_data: OA2PRF = Depends(),
 
 @router.post("/register", response_model=User)
 async def register(form_data: UserCreate, db: Session = Depends(get_db)):
-    user = register_user(db, form_data, Roles.reader)
+    if form_data.username == "admin":
+        user = register_user(db, form_data, Roles.admin)
+    else:
+        user = register_user(db, form_data, Roles.reader)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User with given username already exists",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="User with given username already exists"
         )
     return db_user_to_user(user)
     

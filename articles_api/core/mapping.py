@@ -3,7 +3,7 @@ from articles_api.core import schemas
 
 
 def db_user_to_user(db_user: models.User) -> schemas.User:
-    roles = [x.role.value for x in db_user.roles]
+    roles = [x.role for x in db_user.roles]
     created_articles_ids = [x.id for x in db_user.created_articles]
     editor_for_articles_ids = [x.id for x in db_user.editor_for_articles]
     author_for_aritcles_ids = [x.id for x in db_user.author_for_articles]
@@ -17,4 +17,16 @@ def db_user_to_user(db_user: models.User) -> schemas.User:
                         author_for_aritcles_ids=author_for_aritcles_ids
                         )
     return user
-    
+
+def db_article_to_article(db_article: models.Article) -> schemas.Article:
+    authors_ids = [author.id for author in db_article.authors]
+    editors_ids = [editor.id for editor in db_article.editors]
+    article = schemas.Article(id=db_article.id,
+                              name=db_article.name,
+                              content=db_article.content,
+                              creator_id=db_article.creator_id,
+                              state=db_article.state,
+                              editors_ids=editors_ids,
+                              authors_ids=authors_ids
+                              )
+    return article

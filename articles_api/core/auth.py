@@ -26,4 +26,3 @@ def register_user(db: Session,
         return False
     return create_user(db, form_data, role)
 
-    

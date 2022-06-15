@@ -1,10 +1,11 @@
 import traceback
-from typing import Generator
+from typing import Generator, List, Set
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from articles_api.core.enums import Roles
 from articles_api.core.schemas import TokenData
 from articles_api.db.database import SessionLocal
 from articles_api.config import config
@@ -48,3 +49,26 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+class RolesChecker:
+    def __init__(self, *roles: Roles) -> None:
+        self.roles = set(roles)
+    
+    @staticmethod
+    def have_user_one_of_roles(user: models.User, roles: Set[Roles]) -> bool:
+        user_roles = {role.role for role in user.roles}
+        if roles.intersection(user_roles):
+            return True
+        return False
+    
+    def __call__(self,
+                 user: models.User = Depends(get_current_active_user)
+    ) -> models.User:
+        if not self.have_user_one_of_roles(user, self.roles):
+            raise HTTPException(status_code=403, detail="Access denied")
+        return user
+
+get_writer_or_admin = RolesChecker(Roles.writer, Roles.admin)
+get_reader_or_admin = RolesChecker(Roles.reader, Roles.admin)
+get_admin = RolesChecker(Roles.admin)

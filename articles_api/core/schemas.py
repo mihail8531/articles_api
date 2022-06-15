@@ -14,17 +14,17 @@ class TokenData(BaseModel):
 
 class ArticleBase(BaseModel):
     name: str
-    creator_id: int
-
+    content: str
 
 class ArticleCreate(ArticleBase):
-    content: str
-    editors_ids: List[int] = []
-    authors_ids: List[int] = []
-    
+    pass
 
-class Article(ArticleCreate):
+class Article(ArticleBase):
+    id: int
+    creator_id: int
     state: ArticleStates
+    editors_ids: List[int] 
+    authors_ids: List[int]
 
 
 class UserBase(BaseModel):
