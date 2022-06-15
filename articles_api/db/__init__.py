@@ -1,2 +1,1 @@
-from .models import *
-from .database import *
+import db.models

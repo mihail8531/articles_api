@@ -7,7 +7,9 @@ from articles_api.db.crud import create_user, get_user_by_username
 from articles_api.db.models import User
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Union[User, Literal[False]]:
+def authenticate_user(db: Session,
+                      username: str,
+                      password: str) -> Union[User, Literal[False]]:
     user = get_user_by_username(db, username)
     if not user:
         return False
@@ -15,7 +17,10 @@ def authenticate_user(db: Session, username: str, password: str) -> Union[User, 
         return False
     return user
 
-def register_user(db: Session, form_data: UserCreate, role: Roles) -> Union[User, Literal[False]]:
+
+def register_user(db: Session,
+                  form_data: UserCreate,
+                  role: Roles) -> Union[User, Literal[False]]:
     user = get_user_by_username(db, form_data.username)
     if user:
         return False

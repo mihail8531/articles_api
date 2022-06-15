@@ -13,12 +13,14 @@ from articles_api.db import crud, models
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
+
 def get_db() -> Generator:
     try:
         db = SessionLocal()
         yield db
     finally:
         db.close()
+
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
@@ -28,7 +30,7 @@ def get_current_user(
             token, config.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
         token_data = TokenData(id=payload.get("sub"))
-    except (jwt.JWTError, ValidationError) as e:
+    except (jwt.JWTError, ValidationError):
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -38,6 +40,7 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
 
 def get_current_active_user(
     current_user: models.User = Depends(get_current_user),
