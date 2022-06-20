@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
-from articles_api.core.enums import Roles
+from articles_api.core.enums import ArticleStates, Roles
 from articles_api.core.schemas import TokenData
 from articles_api.db.database import SessionLocal
 from articles_api.config import config
@@ -50,6 +50,13 @@ def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+def get_users_by_ids(ids: List[int],
+                     db: Session = Depends(get_db)) -> List[models.User]:
+    users = crud.get_users_by_ids(db, ids)
+    if len(users) < len(ids):
+        raise HTTPException(status_code=409, detail="Ids list contains invalid user id")
+    return users
+
 
 class RolesChecker:
     def __init__(self, *roles: Roles) -> None:
@@ -69,6 +76,20 @@ class RolesChecker:
             raise HTTPException(status_code=403, detail="Access denied")
         return user
 
+def get_article(article_id: int,
+                   db: Session = Depends(get_db)) -> models.Article:
+    db_article = crud.get_article_by_id(db, article_id)
+    if not db_article:
+        raise HTTPException(status_code=404, detail=f"Article with id {article_id} not found")
+    return db_article
+
+def get_draft_article(article: models.Article = Depends(get_article)) -> models.Article:
+    if article.state != ArticleStates.draft:
+        raise HTTPException(status_code=409, detail="Article must be a draft for publishing")
+    return article
+ 
+
 get_writer_or_admin = RolesChecker(Roles.writer, Roles.admin)
 get_reader_or_admin = RolesChecker(Roles.reader, Roles.admin)
+get_writer_moderator_or_admin = RolesChecker(Roles.writer, Roles.moderator, Roles.admin)
 get_admin = RolesChecker(Roles.admin)

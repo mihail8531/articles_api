@@ -1,5 +1,8 @@
+from typing import List
 from sqlalchemy.orm import Session
-from .models import Article, User, Role
+
+from articles_api.core import schemas
+from .models import Article, AuthorArticle, EditorArticle, User, Role
 from articles_api.core.schemas import ArticleCreate, UserCreate
 from articles_api.core.enums import ArticleStates, Roles
 from articles_api.core.security import get_password_hash
@@ -27,6 +30,43 @@ def get_user_by_username(db: Session, username: str) -> User:
 def get_user_by_id(db: Session, id: int) -> User:
     return db.query(User).filter(User.id == id).first()
 
+def get_users_by_ids(db: Session, ids: List[int]) -> List[User]:
+    return db.query(User).filter(User.id in ids).all()
+
+def add_authors_by_ids(db: Session, db_article: Article,
+                       ids: List[int]) -> Article:
+    article_authors = [AuthorArticle(author_id=author_id,
+                                     article_id=db_article.id) for author_id in ids]
+    db.add_all(article_authors)
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def remove_authors_by_ids(db: Session, db_article: Article,
+                          ids: List[int]) -> Article:
+    db.query(AuthorArticle).filter((AuthorArticle.article_id == db_article.id) &
+                                   (AuthorArticle.author_id in ids)).delete()
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def add_editors_by_ids(db: Session, db_article: Article,
+                       ids: List[int]) -> Article:
+    article_editors = [EditorArticle(editor_id=editor_id,
+                                     article_id=db_article.id) for editor_id in ids]
+    db.add_all(article_editors)
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def remove_editors_by_ids(db: Session, db_article: Article,
+                          ids: List[int]) -> Article:
+    db.query(EditorArticle).filter((EditorArticle.article_id == db_article.id) &
+                                   (EditorArticle.editor_id in ids)).delete()
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
 def create_article(db: Session,
                    article: ArticleCreate,
                    user: User) -> Article:
@@ -36,7 +76,42 @@ def create_article(db: Session,
     db.add(db_article)
     db.commit()
     db.refresh(db_article)
+    db_article_author = AuthorArticle(author_id=user.id,
+                                      article_id=db_article.id)
+    db.add(db_article_author)
+    db.commit()
+    db.refresh(db_article)
     return db_article
+
+def get_article_by_id(db: Session,
+                      article_id: int) -> Article:
+    return db.query(Article).filter(Article.id == article_id).first()
+
+def get_articles_by_state(db: Session,
+                          state: ArticleStates) -> List[Article]:
+    return db.query(Article).filter(Article.state == state).all()
+
+def get_articles_by_author(db: Session,
+                           user: User) -> List[Article]:
+    return db.query(Article).filter(Article.creator_id == user.id).all()
+
+def edit_article(db: Session,
+                 db_article: Article,
+                 article: schemas.ArticleCreate) -> Article:
+    db.query(Article).filter(Article.id == db_article.id).update(article.dict())
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def set_article_state(db: Session,
+                      db_aritcle: Article,
+                      article_state: ArticleStates) -> Article:
+    db.query(Article).filter(Article.id == db_aritcle.id).update({Article.state: article_state})
+    db.commit()
+    db.refresh(db_aritcle)
+    return db_aritcle
+
+
 
 def add_role(db: Session,
              user: User,
