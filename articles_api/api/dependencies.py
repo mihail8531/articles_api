@@ -87,7 +87,12 @@ def get_draft_article(article: models.Article = Depends(get_article)) -> models.
     if article.state != ArticleStates.draft:
         raise HTTPException(status_code=409, detail="Article must be a draft for publishing")
     return article
- 
+
+def get_db_user(user_id: int, db: Session = Depends(get_db)):
+    user = crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 get_writer_or_admin = RolesChecker(Roles.writer, Roles.admin)
 get_reader_or_admin = RolesChecker(Roles.reader, Roles.admin)

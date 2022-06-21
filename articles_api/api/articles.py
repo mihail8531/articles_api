@@ -22,16 +22,21 @@ def create_article(article_create: ArticleCreate,
     db_aritcle = crud.create_article(db, article_create, user)
     return db_article_to_article(db_aritcle)
 
+@router.get("/articles/my_created_articles")
+def get_my_created_articles_ids(user: models.User = Depends(get_current_active_user),
+                                db: Session = Depends(get_db)) -> List[int]:
+    return [article.id for article in  user.created_articles]
+
 @router.get("/articles/approved_articles_ids")
 def get_approved_articles_ids(user: models.User = Depends(get_reader_or_admin),
-                     db: Session = Depends(get_db)) -> List[int]:
+                              db: Session = Depends(get_db)) -> List[int]:
     return [article.id for article in crud.get_articles_by_state(db, ArticleStates.approved)]
 
 @router.get("/articles/published_articles_ids")
 def get_published_articles_ids(user: models.User = Depends(get_writer_moderator_or_admin),
                                db: Session = Depends(get_db)) -> List[int]:
     
-    if not RolesChecker.have_user_one_of_roles(user, Roles.moderator, Roles.admin):
+    if not RolesChecker.have_user_one_of_roles(user, {Roles.moderator, Roles.admin}):
         return [article.id for article in crud.get_articles_by_author(db, user)
                 if article.state == ArticleStates.published]
     return [article.id for article in crud.get_articles_by_state(db, ArticleStates.published)]

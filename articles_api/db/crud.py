@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterator, List, Set, Tuple
 from sqlalchemy.orm import Session
 
 from articles_api.core import schemas
@@ -6,6 +6,8 @@ from .models import Article, AuthorArticle, EditorArticle, User, Role
 from articles_api.core.schemas import ArticleCreate, UserCreate
 from articles_api.core.enums import ArticleStates, Roles
 from articles_api.core.security import get_password_hash
+
+from articles_api.db import models
 
 
 def create_user(db: Session, user: UserCreate, role: Roles) -> User:
@@ -32,6 +34,18 @@ def get_user_by_id(db: Session, id: int) -> User:
 
 def get_users_by_ids(db: Session, ids: List[int]) -> List[User]:
     return db.query(User).filter(User.id in ids).all()
+
+def get_active_users_ids(db: Session) -> Iterator[Tuple[int]]:
+    return db.query(User).values(User.id)
+
+def get_users_ids_with_roles(db: Session, roles: Set[Roles]) -> Iterator[Tuple[int]]:
+    return db.query(Role).filter(Role.role.in_(roles)).values(Role.owner_id)
+
+def set_user_active(db: Session, db_user: models.User, is_active: bool) -> models.User:
+    db.query(models.User).filter(models.User.id == db_user.id).update({models.User.is_active: is_active})
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 def add_authors_by_ids(db: Session, db_article: Article,
                        ids: List[int]) -> Article:
