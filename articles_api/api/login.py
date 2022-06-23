@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OA2PRF = Depends(),
+def login_for_access_token(form_data: OA2PRF = Depends(),
                                  db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -32,7 +32,7 @@ async def login_for_access_token(form_data: OA2PRF = Depends(),
 
 
 @router.post("/register", response_model=User)
-async def register(form_data: UserCreate, db: Session = Depends(get_db)):
+def register(form_data: UserCreate, db: Session = Depends(get_db)):
     if form_data.username == "admin":
         user = register_user(db, form_data, Roles.admin)
     else:

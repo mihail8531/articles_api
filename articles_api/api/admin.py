@@ -9,7 +9,7 @@ from articles_api.db import crud, models
 
 router = APIRouter()
 
-@router.post("/admin/add_role", response_model=schemas.User)
+@router.patch("/admin/add_role", response_model=schemas.User)
 def add_role(role: Roles,
              db_user: models.User = Depends(get_db_user),
              db: Session = Depends(get_db),
@@ -21,7 +21,7 @@ def add_role(role: Roles,
     return db_user_to_user(db_user)
 
 
-@router.post("/admin/remove_role", response_model=schemas.User)
+@router.delete("/admin/remove_role", response_model=schemas.User)
 def remove_role(role: Roles,
                 db_user: models.User = Depends(get_db_user),
                 db: Session = Depends(get_db),
@@ -31,7 +31,7 @@ def remove_role(role: Roles,
     crud.remove_role(db, db_user, role)
     return db_user_to_user(db_user) 
 
-@router.post("/admin/set_active", response_model=schemas.User)
+@router.patch("/admin/set_active", response_model=schemas.User)
 def set_actve(is_active: bool, 
               db_user: models.User = Depends(get_db_user),
               admin: models.User = Depends(get_admin),
