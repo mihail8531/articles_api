@@ -12,3 +12,9 @@ class ArticleStates(Enum):
     published = "published"
     approved = "approved"
     rejected = "rejected"
+
+class CommentaryStates(Enum):
+    published = "published"
+    approved = "approved"
+    rejected = "rejected"
+    reject_commentary = "reject_commentary"

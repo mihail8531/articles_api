@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .database import Base
-from articles_api.core.enums import Roles, ArticleStates
+from articles_api.core.enums import CommentaryStates, Roles, ArticleStates
 
 
 class EditorArticle(Base):
@@ -37,6 +37,7 @@ class User(Base):
                                        secondary=AuthorArticle.__table__,
                                        back_populates="authors")
     roles = relationship("Role", back_populates="owner")
+    commentaries = relationship("Commentary", back_populates="creator")
 
 
 class Role(Base):
@@ -61,4 +62,16 @@ class Article(Base):
                            back_populates="editor_for_articles")
     authors = relationship("User", secondary=AuthorArticle.__table__,
                            back_populates="author_for_articles")
+    commentaries = relationship("Commentary", back_populates="article")
+
+class Commentary(Base):
+    __tablename__ = "commentaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text)
+    state = Column(Enum(CommentaryStates))
+    creator_id = Column(Integer, ForeignKey("users.id"))
+    article_id = Column(Integer, ForeignKey("articles.id"))
+    creator = relationship("User", back_populates="commentaries")
+    article = relationship("Article", back_populates="commentaries")
 

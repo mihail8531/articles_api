@@ -21,7 +21,7 @@ def add_role(role: Roles,
     return db_user_to_user(db_user)
 
 
-@router.delete("/admin/remove_role", response_model=schemas.User)
+@router.patch("/admin/remove_role", response_model=schemas.User)
 def remove_role(role: Roles,
                 db_user: models.User = Depends(get_db_user),
                 db: Session = Depends(get_db),

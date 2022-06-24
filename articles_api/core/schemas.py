@@ -1,6 +1,6 @@
 from typing import List 
 from pydantic import BaseModel, EmailStr
-from .enums import ArticleStates, Roles
+from .enums import ArticleStates, CommentaryStates, Roles
 
 
 class Token(BaseModel):
@@ -25,6 +25,7 @@ class Article(ArticleBase):
     state: ArticleStates
     editors_ids: List[int] 
     authors_ids: List[int]
+    commentaries_ids: List[int]
 
 
 class UserBase(BaseModel):
@@ -39,10 +40,27 @@ class User(UserBase):
     created_articles_ids: List[int]
     editor_for_articles_ids: List[int]
     author_for_aritcles_ids: List[int]
+    commentaries_ids: List[int]
 
 
 class UserCreate(UserBase):
     password: str
+
+
+class CommentaryBase(BaseModel):
+    content: str
+
+
+class CommentaryCreate(CommentaryBase):
+    pass
+
+class Commentary(CommentaryBase):
+    id: int
+    creator_id: int 
+    article_id: int
+    state: CommentaryStates
+    class Config:
+        orm_mode = True
 
 
 

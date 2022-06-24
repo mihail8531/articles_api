@@ -1,14 +1,14 @@
-from typing import List
+from typing import List, Literal
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException
-from articles_api.api.dependencies import (RolesChecker, get_current_active_user,
-                                           get_db, get_article, get_draft_article,
+from articles_api.api.dependencies import (RolesChecker, get_approved_article, get_current_active_user,
+                                           get_db, get_article, get_db_user, get_draft_article,
                                            get_writer_or_admin, get_reader_or_admin,
                                            get_writer_moderator_or_admin)
-from articles_api.core.enums import ArticleStates, Roles
+from articles_api.core.enums import ArticleStates, CommentaryStates, Roles
 from articles_api.core.mapping import db_article_to_article
 from articles_api.db import crud
-from articles_api.core.schemas import Article, ArticleCreate, User
+from articles_api.core.schemas import Article, ArticleCreate, Commentary, CommentaryCreate, User
 from articles_api.db import models
 
 
@@ -51,6 +51,15 @@ def get_published_articles_ids(user: models.User = Depends(get_writer_moderator_
                 if article.state == ArticleStates.published]
     return [article.id for article in crud.get_articles_by_state(db, ArticleStates.published)]
 
+@router.patch("/articles/{article_id}/create_commentary", response_model=Commentary)
+def create_commentary(commentary: CommentaryCreate,
+                      db_article: models.Article = Depends(get_approved_article),
+                      db_user: models.User = Depends(get_reader_or_admin),
+                      db: Session = Depends(get_db)) -> models.Commentary:
+    db_commentary = crud.create_commentary(db, commentary, db_article, db_user, CommentaryStates.published)
+    return db_commentary # without mapping because orm_mode 
+
+
 @router.patch("/articles/{article_id}/edit", response_model=Article) 
 def edit_article(article: ArticleCreate,
                  db_article: models.Article = Depends(get_draft_article),
@@ -74,77 +83,55 @@ def publish_article(db_article: models.Article = Depends(get_draft_article),
     return db_article_to_article(db_article)
 
 @router.patch("/articles/{article_id}/unpublish")
-def unpublish_article(db_article: models.Article = Depends(get_draft_article),
-                    user: models.User = Depends(get_writer_or_admin),
-                    db: Session = Depends(get_db)) -> Article:
+def unpublish_article(db_article: models.Article = Depends(get_article),
+                      user: models.User = Depends(get_writer_or_admin),
+                      db: Session = Depends(get_db)
+                      ) -> Article:
     if (user.id != db_article.creator_id):
         raise HTTPException(status_code=403, detail="Access denied")
     crud.set_article_state(db, db_article, ArticleStates.draft) 
     return db_article_to_article(db_article)
 
-# TODO remove copypast in methods: add_authors, remove_authors, add_editors, remove_editors 
-@router.patch("/articles/{article_id}/add_authors") 
-def add_authors(ids: List[int],
-                db_article: models.Article = Depends(get_draft_article),
-                user: models.User = Depends(get_writer_or_admin),
-                db: Session = Depends(get_db)) -> Article:
+@router.patch("/articles/{article_id}/{action}/author") 
+def add_or_remove_author(action: Literal["add", "remove"],
+                         db_author: models.User = Depends(get_db_user),
+                         db_article: models.Article = Depends(get_draft_article),
+                         user: models.User = Depends(get_writer_or_admin),
+                         db: Session = Depends(get_db)
+                         ) -> Article:
     if (user.id != db_article.creator_id):
         raise HTTPException(status_code=403, detail="Access denied")
-    if len(crud.get_users_by_ids(db, ids)) < len(ids):
-        raise HTTPException(status_code=409, detail="Ids list contains invalid user id")
-    authors_ids = {author.id for author in db_article.authors}
-    if any(user_id in authors_ids for user_id in ids):
-        raise HTTPException(status_code=409, detail="At list one of the given users already an author")
-    crud.add_authors_by_ids(db, db_article, ids)
+    is_author = db_author.id in {author.id for author in db_article.authors}
+    if action == "add":
+        if is_author:
+            raise HTTPException(status_code=409, detail="Given user already an author")
+        crud.add_article_author(db, db_article, db_author.id)
+    elif action == "remove":
+        if not is_author:
+            raise HTTPException(status_code=409, detail="Given user is not an author")
+        crud.remove_article_author(db, db_article, db_author.id)
     return db_article_to_article(db_article)
 
-@router.delete("/articles/{article_id}/remove_authors") 
-def remove_authors(ids: List[int],
-                   db_article: models.Article = Depends(get_draft_article),
-                   user: models.User = Depends(get_writer_or_admin),
-                   db: Session = Depends(get_db)) -> Article:
-    if (user.id != db_article.creator_id):
-        raise HTTPException(status_code=403, detail="Access denied")
-    if len(crud.get_users_by_ids(db, ids)) < len(ids):
-        raise HTTPException(status_code=409, detail="Ids list contains invalid user id")
-    authors_ids = {author.id for author in db_article.authors}
-    if any(user_id not in authors_ids for user_id in ids):
-        raise HTTPException(status_code=409, detail="At list one of the given users is not an author")
-    if (user.id in ids):
-        raise HTTPException(status_code=409, detail="Can't remove creator from authors")
-    crud.remove_authors_by_ids(db, db_article, ids)
-    return db_article_to_article(db_article)
-    
-@router.patch("/articles/{article_id}/add_editors")
-def add_editors(ids: List[int],
-                db_article: models.Article = Depends(get_draft_article),
-                user: models.User = Depends(get_writer_or_admin),
-                db: Session = Depends(get_db)) -> Article:
-    if (user.id != db_article.creator_id):
-        raise HTTPException(status_code=403, detail="Access denied")
-    if len(crud.get_users_by_ids(db, ids)) < len(ids):
-        raise HTTPException(status_code=409, detail="Ids list contains invalid user id")
-    editors_ids = {editor.id for editor in db_article.editors}
-    if any(user_id in editors_ids for user_id in ids):
-        raise HTTPException(status_code=409, detail="At list one of the given users already an editor")
-    crud.add_editors_by_ids(db, db_article, ids)
-    return db_article_to_article(db_article)
 
-@router.delete("/articles/{article_id}/remove_editors") 
-def remove_editors(ids: List[int],
-                   db_article: models.Article = Depends(get_draft_article),
-                   user: models.User = Depends(get_writer_or_admin),
-                   db: Session = Depends(get_db)) -> Article:
+@router.patch("/articles/{article_id}/{action}/editor") 
+def add_or_remove_editor(action: Literal["add", "remove"],
+                         db_editor: models.User = Depends(get_db_user),
+                         db_article: models.Article = Depends(get_draft_article),
+                         user: models.User = Depends(get_writer_or_admin),
+                         db: Session = Depends(get_db)
+                         ) -> Article:
     if (user.id != db_article.creator_id):
         raise HTTPException(status_code=403, detail="Access denied")
-    if len(crud.get_users_by_ids(db, ids)) < len(ids):
-        raise HTTPException(status_code=409, detail="Ids list contains invalid user id")
-    editors_ids = {editor.id for editor in db_article.editors}
-    if any(user_id not in editors_ids for user_id in ids):
-        raise HTTPException(status_code=409, detail="At list one of the given users is not an editor")
-    crud.remove_editors_by_ids(db, db_article, ids)
+    is_editor = db_editor.id in {editor.id for editor in db_article.editors}
+    if action == "add":
+        if is_editor:
+            raise HTTPException(status_code=409, detail="Given user already an editor")
+        crud.add_article_editor(db, db_article, db_editor.id)
+    elif action == "remove":
+        if not is_editor:
+            raise HTTPException(status_code=409, detail="Given user is not an editor")
+        crud.remove_article_editor(db, db_article, db_editor.id)
     return db_article_to_article(db_article)
-
 
 
 @router.get("/articles/{article_id}", response_model=Article)
