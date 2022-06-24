@@ -73,7 +73,7 @@ def get_db_user(user_id: int, db: Session = Depends(get_db)) -> models.User:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-def get_commentary(commentary_id: int, db: Session = Depends(get_db)):
+def get_db_commentary(commentary_id: int, db: Session = Depends(get_db)):
     db_commentary = crud.get_commentary_by_id(db, commentary_id)
     if not db_commentary:
         raise HTTPException(status_code=404, detail="Commentary not found")
@@ -124,7 +124,7 @@ get_published_article = ArticleStateChecker(ArticleStates.published)
 class CommentaryStateChecker:
     def __init__(self, state: CommentaryStates) -> None:
         self.state = state
-    def __call__(self, commentary: models.Commentary=Depends(get_commentary)) -> models.Commentary:
+    def __call__(self, commentary: models.Commentary=Depends(get_db_commentary)) -> models.Commentary:
         if commentary.state != self.state:
             raise HTTPException(status_code=409, detail=f"Commentary must be a {self.state}")
         return commentary
