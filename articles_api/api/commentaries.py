@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from articles_api.core import schemas 
 from articles_api.core.enums import CommentaryStates, Roles
 from articles_api.db import models
-from dependencies import get_db_commentary, get_current_active_user, get_db
+from articles_api.api.dependencies import get_db_commentary, get_current_active_user, get_db
 
 router = APIRouter()
 
