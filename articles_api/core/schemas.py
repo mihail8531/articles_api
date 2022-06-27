@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List 
 from pydantic import BaseModel, EmailStr
 from .enums import ArticleStates, CommentaryStates, Roles
@@ -23,6 +24,10 @@ class Article(ArticleBase):
     id: int
     creator_id: int
     state: ArticleStates
+    creation_datetime: datetime
+    keywords: List[str]
+    average_mark: float
+    marks_amount: int
     editors_ids: List[int] 
     authors_ids: List[int]
     commentaries_ids: List[int]
@@ -37,6 +42,7 @@ class User(UserBase):
     id: int
     is_active: bool
     roles: List[Roles]
+    marks_ids: List[int]
     created_articles_ids: List[int]
     editor_for_articles_ids: List[int]
     author_for_aritcles_ids: List[int]

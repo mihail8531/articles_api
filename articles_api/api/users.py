@@ -24,13 +24,13 @@ def get_active_users_ids(db_user: models.User = Depends(get_current_active_user)
 
 @router.get("/users/users_ids_with_roles")
 def get_users_ids_with_roles(roles: List[Roles],
-                             current_user: models.User = Depends(get_current_active_user),
+                             db_user: models.User = Depends(get_current_active_user),
                              db: Session = Depends(get_db)) -> List[int]:
     return crud.get_users_ids_with_roles(db, set(roles))
 
 
 @router.get("/users/{user_id}", response_model=schemas.User)
-def get_user(current_user: models.User = Depends(get_current_active_user),
-             db_user: models.User = Depends(get_db_user)
+def get_user(db_user: models.User = Depends(get_current_active_user),
+             user_to_get: models.User = Depends(get_db_user)
              ) -> schemas.User:
-    return db_user_to_user(db_user)
+    return db_user_to_user(user_to_get)

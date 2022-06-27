@@ -1,5 +1,5 @@
 from typing import Set
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -30,6 +30,7 @@ class User(Base):
     username = Column(String, unique=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    marks = relationship("Mark", back_populates="creator")
     created_articles = relationship("Article", back_populates="creator")
     editor_for_articles = relationship("Article",
                                        secondary=EditorArticle.__table__,
@@ -61,7 +62,10 @@ class Article(Base):
     content = Column(Text)
     state = Column(Enum(ArticleStates))
     creator_id = Column(Integer, ForeignKey("users.id"))
+    creation_datetime = Column(DateTime)
     creator = relationship("User", back_populates="created_articles")
+    marks = relationship("Mark", back_populates="article")
+    keywords = relationship("Keyword", back_populdates="article")
     editors = relationship("User", secondary=EditorArticle.__table__,
                            back_populates="editor_for_articles")
     authors = relationship("User", secondary=AuthorArticle.__table__,
@@ -97,3 +101,20 @@ class Commentary(Base):
     def have_state(self, state: CommentaryStates) -> bool:
         return self.state == state
 
+class Keyword(Base):
+    __tablename__ = "keywords"
+
+    id = Column(Integer, primaary_key=True, index=True)
+    keyword = Column(String)
+    article_id = Column(Integer, ForeignKey("articles.id"))
+    article = relationship("Article", back_populates="keywords")
+
+class Mark(Base):
+    __tablename__ = "marks"
+
+    id = Column(Integer, primaary_key=True, index=True)
+    mark = Column(Integer)
+    creator_id = Column(Integer, ForeignKey("users.id"))
+    article_id = Column(Integer, ForeignKey("articles.id"))
+    creator = relationship("User", back_populates="marks")
+    article = relationship("Article", back_populates="marks")

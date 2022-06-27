@@ -99,6 +99,8 @@ def unpublish_article(db_article: models.Article = Depends(get_article),
     crud.set_article_state(db, db_article, ArticleStates.draft) 
     return db_article_to_article(db_article)
 
+@router.patch("/articles/{article_id}/rate", response_model=schemas.Article)
+
 @router.patch("/articles/{article_id}/{action}/author", response_model=schemas.Article) 
 def add_or_remove_author(action: Literal["add", "remove"],
                          db_author: models.User = Depends(get_db_user),

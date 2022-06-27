@@ -1,8 +1,9 @@
+from datetime import datetime
 from typing import Iterator, List, Set, Tuple
 from sqlalchemy.orm import Session
 
 from articles_api.core import schemas
-from .models import Article, AuthorArticle, Commentary, EditorArticle, User, Role
+from .models import Article, AuthorArticle, Commentary, EditorArticle, Keyword, Mark, User, Role
 from articles_api.core.schemas import ArticleCreate, UserCreate
 from articles_api.core.enums import ArticleStates, CommentaryStates, Roles
 from articles_api.core.security import get_password_hash
@@ -118,6 +119,7 @@ def create_article(db: Session,
                    ) -> Article:
     db_article = Article(**article.dict(),
                          state=ArticleStates.draft,
+                         creation_datetime=datetime.now(),
                          creator_id=user.id)
     db.add(db_article)
     db.commit()
@@ -128,6 +130,70 @@ def create_article(db: Session,
     db.commit()
     db.refresh(db_article)
     return db_article
+
+def add_article_keywords(db: Session,
+                         db_article: Article,
+                         *keywords: str
+                         ) -> models.Article:
+    db_keywords = [Keyword(article_id=db_article.id,
+                           keyword=keyword)
+                   for keyword in keywords]
+    db.add_all(db_keywords)
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def remove_article_keywords(db: Session,
+                            db_article: Article,
+                            *keywords: str
+                            ) -> models.Article:
+    (db.query(Keyword)
+       .filter(Keyword.keyword.in_(keywords))
+       .delete())
+    db.commit()
+    db.refresh(db_article)
+    return db_article
+
+def add_article_mark(db: Session,
+                     db_user: User,
+                     db_article: Article,
+                     mark: int
+                     ) -> models.Article:
+    db_mark = Mark(creator_id=db_user.id,
+                   article_id=db_article.id,
+                   mark=mark)
+    db.add(db_mark)
+    db.commit()
+    db.refresh(db_user)
+    db.refresh(db_article)
+    return db_article
+
+def remove_article_mark(db: Session,
+                        db_user: User,
+                        db_article: Article
+                        ) -> models.Article:
+    (db.query(Mark)
+       .filter(Mark.article_id == db_article.id &
+               Mark.creator_id == db_user.id)
+       .delete())
+    db.commit()
+    db.refresh(db_article)
+    db.refresh(db_user)
+    return db_article
+
+def update_article_mark(db: Session,
+                        db_user: User,
+                        db_article: Article,
+                        mark: int) -> models.Article:
+    (db.query(Mark)
+       .filter(Mark.article_id == db_article.id &
+               Mark.creator_id == db_user.id)
+       .update({Mark.mark: mark}))
+    db.commit()
+    db.refresh(db_article)
+    db.refresh(db_user)
+    return db_article
+
 
 def get_article_by_id(db: Session,
                       article_id: int
