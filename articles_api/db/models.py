@@ -65,7 +65,7 @@ class Article(Base):
     creation_datetime = Column(DateTime)
     creator = relationship("User", back_populates="created_articles")
     marks = relationship("Mark", back_populates="article")
-    keywords = relationship("Keyword", back_populdates="article")
+    keywords = relationship("Keyword", back_populates="article")
     editors = relationship("User", secondary=EditorArticle.__table__,
                            back_populates="editor_for_articles")
     authors = relationship("User", secondary=AuthorArticle.__table__,
@@ -104,7 +104,7 @@ class Commentary(Base):
 class Keyword(Base):
     __tablename__ = "keywords"
 
-    id = Column(Integer, primaary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     keyword = Column(String)
     article_id = Column(Integer, ForeignKey("articles.id"))
     article = relationship("Article", back_populates="keywords")
@@ -112,7 +112,7 @@ class Keyword(Base):
 class Mark(Base):
     __tablename__ = "marks"
 
-    id = Column(Integer, primaary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     mark = Column(Integer)
     creator_id = Column(Integer, ForeignKey("users.id"))
     article_id = Column(Integer, ForeignKey("articles.id"))
