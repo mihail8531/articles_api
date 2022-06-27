@@ -84,17 +84,10 @@ class RolesChecker:
     def __init__(self, *roles: Roles) -> None:
         self.roles = set(roles)
     
-    @staticmethod
-    def have_user_one_of_roles(user: models.User, roles: Set[Roles]) -> bool:
-        user_roles = {role.role for role in user.roles}
-        if roles.intersection(user_roles):
-            return True
-        return False
-    
     def __call__(self,
                  user: models.User = Depends(get_current_active_user)
     ) -> models.User:
-        if not self.have_user_one_of_roles(user, self.roles):
+        if not user.have_one_of_roles(self.roles):
             raise HTTPException(status_code=403, detail="Access denied")
         return user
 
@@ -109,9 +102,10 @@ get_moderator_or_admin = RolesChecker(Roles.moderator, Roles.admin)
 class ArticleStateChecker:
     def __init__(self, state: ArticleStates) -> None:
         self.state = state
+
     def __call__(self, article: models.Article=Depends(get_article)) -> models.Article:
         if article.state != self.state:
-            raise HTTPException(status_code=409, detail=f"Article must be a {self.state}")
+            raise HTTPException(status_code=409, detail=f"Article's state must be a {self.state}")
         return article
 
 
@@ -124,9 +118,10 @@ get_published_article = ArticleStateChecker(ArticleStates.published)
 class CommentaryStateChecker:
     def __init__(self, state: CommentaryStates) -> None:
         self.state = state
+    
     def __call__(self, commentary: models.Commentary=Depends(get_db_commentary)) -> models.Commentary:
         if commentary.state != self.state:
-            raise HTTPException(status_code=409, detail=f"Commentary must be a {self.state}")
+            raise HTTPException(status_code=409, detail=f"Commentary's state must be a {self.state}")
         return commentary
 
 get_published_commentary = CommentaryStateChecker(CommentaryStates.published)

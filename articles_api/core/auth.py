@@ -9,20 +9,22 @@ from articles_api.db.models import User
 
 def authenticate_user(db: Session,
                       username: str,
-                      password: str) -> Union[User, Literal[False]]:
-    user = get_user_by_username(db, username)
-    if not user:
+                      password: str
+                      ) -> Union[User, Literal[False]]:
+    db_user = get_user_by_username(db, username)
+    if not db_user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, db_user.hashed_password):
         return False
-    return user
+    return db_user
 
 
 def register_user(db: Session,
                   form_data: UserCreate,
-                  role: Roles) -> Union[User, Literal[False]]:
-    user = get_user_by_username(db, form_data.username)
-    if user:
+                  role: Roles
+                  ) -> Union[User, Literal[False]]:
+    db_user = get_user_by_username(db, form_data.username)
+    if db_user:
         return False
     return create_user(db, form_data, role)
 

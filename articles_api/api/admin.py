@@ -15,7 +15,7 @@ def add_role(role: Roles,
              db: Session = Depends(get_db),
              admin: models.User = Depends(get_admin)
              ) -> schemas.User:
-    if RolesChecker.have_user_one_of_roles(db_user, {role}):
+    if db_user.have_role(role):
         raise HTTPException(status_code=409, detail=f"User already has role {role}")
     crud.add_role(db, db_user, role)
     return db_user_to_user(db_user)
@@ -25,8 +25,9 @@ def add_role(role: Roles,
 def remove_role(role: Roles,
                 db_user: models.User = Depends(get_db_user),
                 db: Session = Depends(get_db),
-                admin: models.User = Depends(get_admin)) -> schemas.User:
-    if not RolesChecker.have_user_one_of_roles(db_user, {role}):
+                admin: models.User = Depends(get_admin)
+                ) -> schemas.User:
+    if not db_user.have_role(role):
         raise HTTPException(status_code=409, detail=f"User does not have role {role}")
     crud.remove_role(db, db_user, role)
     return db_user_to_user(db_user) 
@@ -35,6 +36,7 @@ def remove_role(role: Roles,
 def set_actve(is_active: bool, 
               db_user: models.User = Depends(get_db_user),
               admin: models.User = Depends(get_admin),
-              db: Session = Depends(get_db)) -> schemas.User:
+              db: Session = Depends(get_db)
+              ) -> schemas.User:
     crud.set_user_active(db, db_user, is_active)
     return db_user_to_user(db_user)

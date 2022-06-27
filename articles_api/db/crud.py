@@ -44,16 +44,16 @@ def get_users_by_ids(db: Session, ids: List[int]) -> List[User]:
               .filter(User.id in ids)
               .all())
 
-def get_active_users_ids(db: Session) -> Iterator[Tuple[int]]:
-    return (db.query(User)
-              .values(User.id))
+def get_active_users_ids(db: Session) -> List[int]:
+    return [user_id for (user_id,) in db.query(User)
+                                        .values(User.id)]
 
 def get_users_ids_with_roles(db: Session,
                              roles: Set[Roles]
-                             ) -> Iterator[Tuple[int]]:
-    return (db.query(Role)
-              .filter(Role.role.in_(roles))
-              .values(Role.owner_id))
+                             ) -> List[int]:
+    return [user_id for (user_id,) in set(db.query(Role)
+                                            .filter(Role.role.in_(roles))
+                                            .values(Role.owner_id))]
 
 def set_user_active(db: Session,
                     db_user: models.User,

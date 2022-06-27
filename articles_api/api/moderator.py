@@ -37,6 +37,9 @@ def approve_or_reject_commentary(action: Literal["approve", "reject"],
                                  db_user: models.User=Depends(get_moderator_or_admin),
                                  db: Session=Depends(get_db)
                                  ) -> schemas.Article:
-    commentary_state = CommentaryStates.approved if action == "approve" else CommentaryStates.rejected
+    if action == "approve":
+        commentary_state = CommentaryStates.approved
+    else:
+        commentary_state = CommentaryStates.rejected
     crud.set_commentary_state(db, db_commentary, commentary_state)
     return db_article_to_article(db_commentary)

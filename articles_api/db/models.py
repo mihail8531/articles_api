@@ -1,3 +1,4 @@
+from typing import Set
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
@@ -39,6 +40,9 @@ class User(Base):
     roles = relationship("Role", back_populates="owner")
     commentaries = relationship("Commentary", back_populates="creator")
 
+    def have_role(self, *roles: Roles) -> bool:
+        user_roles = {role.role for role in self.roles}
+        return bool(set(roles).intersection(user_roles))
 
 class Role(Base):
     __tablename__ = "roles"
@@ -64,6 +68,18 @@ class Article(Base):
                            back_populates="author_for_articles")
     commentaries = relationship("Commentary", back_populates="article")
 
+    def is_creator(self, user: User) -> bool:
+        return user.id == self.creator_id
+    
+    def is_author(self, user: User) -> bool:
+        return user.id in {author.id for author in self.authors}
+
+    def is_editor(self, user: User) -> bool:
+        return user.id in {editor.id for editor in self.editors}
+    
+    def have_state(self, *states: ArticleStates) -> bool:
+        return self.state in states
+    
 class Commentary(Base):
     __tablename__ = "commentaries"
 
@@ -74,4 +90,10 @@ class Commentary(Base):
     article_id = Column(Integer, ForeignKey("articles.id"))
     creator = relationship("User", back_populates="commentaries")
     article = relationship("Article", back_populates="commentaries")
+
+    def is_creator(self, user: User) -> bool:
+        return user.id == self.creator_id
+    
+    def have_state(self, state: CommentaryStates) -> bool:
+        return self.state == state
 
